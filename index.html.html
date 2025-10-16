@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Biathlon Lycée Mobile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .screen {
+            display: none;
+            min-height: 100vh;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header-bar {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .header-bar h1 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+        
+        .header-bar p {
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
+        
+        .phase-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .phase-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ddd;
+            transition: all 0.3s ease;
+        }
+        
+        .phase-dot.completed {
+            background: #4CAF50;
+        }
+        
+        .phase-dot.active {
+            background: #667eea;
+            transform: scale(1.3);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1.1em;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .timer-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 0;
+        }
+        
+        .phase-title {
+            font-size: 2em;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        
+        .phase-title.course {
+            color: #2196F3;
+        }
+        
+        .phase-title.shooting {
+            color: #e91e63;
+        }
+        
+        .timer-display {
+            font-size: 5em;
+            font-weight: bold;
+            color: #667eea;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            margin: 30px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .phase-status {
+            text-align: center;
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .targets-container {
+            margin: 30px 0;
+        }
+        
+        .targets-info {
+            display: flex;
+            justify-content: space-around;
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border: 2px solid #ffc107;
+        }
+        
+        .targets-info-item {
+            text-align: center;
+        }
+        
+        .targets-info-item .label {
+            font-size: 0.9em;
+            color: #856404;
+            font-weight: 600;
+        }
+        
+        .targets-info-item .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #533f03;
+            margin-top: 5px;
+        }
+        
+        .targets-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin: 25px 0;
+        }
+        
+        .target-button {
+            aspect-ratio: 1;
+            border: 3px solid #ddd;
+            border-radius: 50%;
+            background: white;
+            font-size: 1.8em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .target-button::before {
+            content: attr(data-position);
+            position: absolute;
+            top: -22px;
+            font-size: 0.6em;
+            color: #999;
+        }
+        
+        .target-button:active {
+            transform: scale(0.95);
+        }
+        
+        .target-button.hit {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            border-color: #4CAF50;
+            color: white;
+        }
+        
+        .target-button.miss {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            border-color: #f44336;
+            color: white;
+        }
+        
+        .action-button {
+            width: 100%;
+            padding: 20px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: auto;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .action-button:active {
+            transform: translateY(2px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        
+        .action-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+        }
+        
+        .btn-config {
+            background: none;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.9em;
+            text-transform: none;
+            letter-spacing: normal;
+            width: auto;
+            margin: 0 0 15px auto;
+            display: block;
+        }
+        
+        .results-container {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border-top: 4px solid #667eea;
+        }
+        
+        .stat-card.highlight {
+            border-top-color: #4CAF50;
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+        }
+        
+        .stat-card h3 {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        
+        .stat-card .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .detail-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .detail-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-row.total {
+            font-weight: bold;
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .button-group {
+            display: grid;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .info-box {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .info-box h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .info-box ol, .info-box p {
+            color: #856404;
+            line-height: 1.8;
+            font-size: 0.9em;
+        }
+        
+        .info-box ol {
+            padding-left: 20px;
+        }
+        
+        @media (max-width: 360px) {
+            .timer-display {
+                font-size: 4em;
+            }
+            
+            .phase-title {
+                font-size: 1.6em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Écran 1: Informations -->
+    <div class="screen active" id="screen-info">
+        <div class="card">
+            <div class="header-bar">
+                <h1>🎯 BIATHLON</h1>
+                <p>Recueil de données</p>
+            </div>
+            
+            <div class="phase-indicator">
+                <div class="phase-dot active"></div>
+                <div class="phase-dot"></div>
+                <div class="phase-dot"></div>
+                <div class="phase-dot"></div>
+                <div class="phase-dot"></div>
+                <div class="phase-dot"></div>
+                <div class="phase-dot"></div>
+            </div>
+            
+            <h2 style="color: #333; margin-bottom: 20px;">📋 Informations</h2>
+            
+            <button class="btn-config" onclick="goToConfig()">
+                ⚙️ Config Google Sheets
+            </button>
+            
+            <div class="form-group">
+                <label for="judgeName">👨‍⚖️ Nom du juge</label>
+                <input type="text" id="judgeName" placeholder="Ex: Martin Dubois">
+            </div>
+            
+            <div class="form-group">
+                <label for="studentName">👤 Nom et Prénom du coureur</label>
+                <input type="text" id="studentName" placeholder="Ex: Dupont Martin">
+            </div>
+            
+            <div class="form-group">
+                <label for="studentClass">🎓 Classe</label>
+                <input type="text" id="studentClass" placeholder="Ex: 1ère S1">
+            </div>
+            
+            <div class="form-group">
+                <label for="studentDate">📅 Date</label>
+                <input type="date" id="studentDate" value="2025-10-16">
+            </div>
+            
+            <div class="form-group">
+                <label for="studentNumber">🔢 Numéro de dossard</label>
+                <input type="text" id="studentNumber" placeholder="Ex: 42">
+            </div>
+            
+            <button class="action-button btn-primary" onclick="startBiathlon()">
+                🚀 COMMENCER
+            </button>
+        </div>
+    </div>
+
+    <!-- Écran Config -->
+    <div class="screen" id="screen-config">
+        <div class="card">
+            <div class="header-bar">
+                <h1>⚙️ CONFIGURATION</h1>
+                <p>Google Sheets</p>
+            </div>
+            
+            <h2 style="color: #333; margin-bottom: 20px;">🔗 Connexion à Google Sheets</h2>
+            
+            <div class="form-group">
+                <label for="sheetsUrl">URL du Google Sheets (pour consultation)</label>
+                <input type="text" id="sheetsUrl" placeholder="https://docs.google.com/spreadsheets/d/...">
+                <small style="color: #666; margin-top: 5px; display: block;">Cette URL sera utilisée pour le QR code d'accès aux résultats</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="sheetsApiUrl">URL de l'API Google Apps Script</label>
+                <input type="text" id="sheetsApiUrl" placeholder="https://script.google.com/macros/s/..." value="https://script.google.com/macros/s/AKfycbyFqSjwJJZ-py07ctDsHg7AVG1Eba9gnqvdV8Jj3Stkrl_VoUctTCLhkAUgjRqD1xleuA/exec">
+                <small style="color: #666; margin-top: 5px; display: block;">URL de déploiement du script pour envoyer les données</small>
+            </div>
+            
+            <div class="info-box">
+                <h3>📋 Instructions</h3>
+                <ol>
+                    <li>Créez un Google Sheets</li>
+                    <li>Créez un Google Apps Script</li>
+                    <li>Déployez le script comme application web</li>
+                    <li>Copiez l'URL de déploiement ci-dessus</li>
+                    <li>Copiez aussi l'URL du Sheets pour le QR code</li>
+                </ol>
+            </div>
+            
+            <div class="button-group">
+                <button class="action-button btn-primary" onclick="saveConfig()">
+                    💾 ENREGISTRER
+                </button>
+                <button class="action-button btn-secondary" onclick="goToInfo()">
+                    ← RETOUR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Écran 2: Course 1 -->
+    <div class="screen" id="screen-course1">
+        <div class="card">
+            <div class="header-bar">
+                <h1>🏃‍♂️ COURSE 1</h1>
+            </div>
+            
+            <div class="phase-indicator">
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot active"></div>
+                <div class="phase-dot"></div>
+                <div class="phase-dot"></div>
+                <div class="phase-dot"></div>
+                <div class="phase-dot"></div>
+                <div class="phase-dot"></div>
+            </div>
+            
+            <div class="timer-container">
+                <div class="timer-display" id="timer-course1">00:00</div>
+                <div class="phase-status" id="status-course1">Appuyez sur DÉPART</div>
+            </div>
+            
+            <button class="action-button btn-primary" id="btn-start-course1" onclick="startCourse1()">
+                🚀 DÉPART
+            </button>
+            <button class="action-button btn-secondary" id="btn-stop-course1" onclick="stopCourse1()" style="display:none;">
+                ⏹️ TERMINER COURSE 1
+            </button>
+        </div>
+    </div>
+
+    <!-- Écran 3: Tir 1 -->
+    <div class="screen" id="screen-shooting1">
+        <div class="card">
+            <div class="header-bar">
+                <h1>🎯 TIR 1</h1>
+            </div>
+            
+            <div class="phase-indicator">
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot active"></div>
+                <div class="phase-dot"></div>
+                <div class="phase-dot"></div>
+                <div class="phase-dot"></div>
+                <div class="phase-dot"></div>
+            </div>
+            
+            <div class="timer-display" id="timer-shooting1">00:00</div>
+            
+            <div class="targets-container">
+                <div class="targets-info">
+                    <div class="targets-info-item">
+                        <div class="label">Cibles</div>
+                        <div class="value" id="hits-shooting1">0/5</div>
+                    </div>
+                    <div class="targets-info-item">
+                        <div class="label">Sens</div>
+                        <div class="value" id="direction-shooting1">-</div>
+                    </div>
+                </div>
+                
+                <div class="targets-grid" id="targets-shooting1">
+                    <button class="target-button" data-position="1" onclick="toggleTarget(1, 1)">1</button>
+                    <button class="target-button" data-position="2" onclick="toggleTarget(1, 2)">2</button>
+                    <button class="target-button" data-position="3" onclick="toggleTarget(1, 3)">3</button>
+                    <button class="target-button" data-position="4" onclick="toggleTarget(1, 4)">4</button>
+                    <button class="target-button" data-position="5" onclick="toggleTarget(1, 5)">5</button>
+                </div>
+            </div>
+            
+            <button class="action-button btn-warning" onclick="stopShooting1()">
+                ⏹️ TERMINER TIR 1
+            </button>
+        </div>
+    </div>
+
+    <!-- Écran 4: Course 2 -->
+    <div class="screen" id="screen-course2">
+        <div class="card">
+            <div class="header-bar">
+                <h1>🏃‍♂️ COURSE 2</h1>
+            </div>
+            
+            <div class="phase-indicator">
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot active"></div>
+                <div class="phase-dot"></div>
+                <div class="phase-dot"></div>
+                <div class="phase-dot"></div>
+            </div>
+            
+            <div class="timer-container">
+                <div class="timer-display" id="timer-course2">00:00</div>
+                <div class="phase-status">En cours...</div>
+            </div>
+            
+            <button class="action-button btn-secondary" onclick="stopCourse2()">
+                ⏹️ TERMINER COURSE 2
+            </button>
+        </div>
+    </div>
+
+    <!-- Écran 5: Tir 2 -->
+    <div class="screen" id="screen-shooting2">
+        <div class="card">
+            <div class="header-bar">
+                <h1>🎯 TIR 2</h1>
+            </div>
+            
+            <div class="phase-indicator">
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot active"></div>
+                <div class="phase-dot"></div>
+                <div class="phase-dot"></div>
+            </div>
+            
+            <div class="timer-display" id="timer-shooting2">00:00</div>
+            
+            <div class="targets-container">
+                <div class="targets-info">
+                    <div class="targets-info-item">
+                        <div class="label">Cibles</div>
+                        <div class="value" id="hits-shooting2">0/5</div>
+                    </div>
+                    <div class="targets-info-item">
+                        <div class="label">Sens</div>
+                        <div class="value" id="direction-shooting2">-</div>
+                    </div>
+                </div>
+                
+                <div class="targets-grid" id="targets-shooting2">
+                    <button class="target-button" data-position="1" onclick="toggleTarget(2, 1)">1</button>
+                    <button class="target-button" data-position="2" onclick="toggleTarget(2, 2)">2</button>
+                    <button class="target-button" data-position="3" onclick="toggleTarget(2, 3)">3</button>
+                    <button class="target-button" data-position="4" onclick="toggleTarget(2, 4)">4</button>
+                    <button class="target-button" data-position="5" onclick="toggleTarget(2, 5)">5</button>
+                </div>
+            </div>
+            
+            <button class="action-button btn-warning" onclick="stopShooting2()">
+                ⏹️ TERMINER TIR 2
+            </button>
+        </div>
+    </div>
+
+    <!-- Écran 6: Course 3 -->
+    <div class="screen" id="screen-course3">
+        <div class="card">
+            <div class="header-bar">
+                <h1>🏃‍♂️ COURSE 3</h1>
+            </div>
+            
+            <div class="phase-indicator">
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot active"></div>
+                <div class="phase-dot"></div>
+            </div>
+            
+            <div class="timer-container">
+                <div class="timer-display" id="timer-course3">00:00</div>
+                <div class="phase-status">En cours...</div>
+            </div>
+            
+            <button class="action-button btn-secondary" onclick="stopCourse3()">
+                ⏹️ TERMINER COURSE 3
+            </button>
+        </div>
+    </div>
+
+    <!-- Écran 7: Tir 3 -->
+    <div class="screen" id="screen-shooting3">
+        <div class="card">
+            <div class="header-bar">
+                <h1>🎯 TIR 3</h1>
+            </div>
+            
+            <div class="phase-indicator">
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot completed"></div>
+                <div class="phase-dot active"></div>
+            </div>
+            
+            <div class="timer-display" id="timer-shooting3">00:00</div>
+            
+            <div class="targets-container">
+                <div class="targets-info">
+                    <div class="targets-info-item">
+                        <div class="label">Cibles</div>
+                        <div class="value" id="hits-shooting3">0/5</div>
+                    </div>
+                    <div class="targets-info-item">
+                        <div class="label">Sens</div>
+                        <div class="value" id="direction-shooting3">-</div>
+                    </div>
+                </div>
+                
+                <div class="targets-grid" id="targets-shooting3">
+                    <button class="target-button" data-position="1" onclick="toggleTarget(3, 1)">1</button>
+                    <button class="target-button" data-position="2" onclick="toggleTarget(3, 2)">2</button>
+                    <button class="target-button" data-position="3" onclick="toggleTarget(3, 3)">3</button>
+                    <button class="target-button" data-position="4" onclick="toggleTarget(3, 4)">4</button>
+                    <button class="target-button" data-position="5" onclick="toggleTarget(3, 5)">5</button>
+                </div>
+            </div>
+            
+            <button class="action-button btn-danger" onclick="stopShooting3()">
+                🏁 TERMINER L'ÉPREUVE
+            </button>
+        </div>
+    </div>
+
+    <!-- Écran 8: Résultats -->
+    <div class="screen" id="screen-results">
+        <div class="card">
+            <div class="header-bar">
+                <h1>📊 RÉSULTATS</h1>
+            </div>
+            
+            <div class="results-container">
+                <div class="stats-grid">
+                    <div class="stat-card highlight">
+                        <h3>Temps Total</h3>
+                        <div class="value" id="result-total">00:00</div>
+                    </div>
+                    <div class="stat-card highlight">
+                        <h3>Cibles</h3>
+                        <div class="value" id="result-hits">0/15</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Temps Course</h3>
+                        <div class="value" id="result-course">00:00</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Temps Tir</h3>
+                        <div class="value" id="result-shooting">00:00</div>
+                    </div>
+                </div>
+                
+                <div class="detail-section">
+                    <h3>🏃‍♂️ Détail Courses</h3>
+                    <div id="detail-courses"></div>
+                </div>
+                
+                <div class="detail-section">
+                    <h3>🎯 Détail Tirs</h3>
+                    <div id="detail-shootings"></div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="action-button btn-primary" onclick="sendToGoogleSheets()">
+                        📊 ENVOYER VERS GOOGLE SHEETS
+                    </button>
+                    <button class="action-button btn-secondary" onclick="saveResults()">
+                        💾 SAUVEGARDER LOCALEMENT
+                    </button>
+                    <button class="action-button btn-secondary" onclick="showQRCode()">
+                        📱 AFFICHER QR CODE
+                    </button>
+                    <button class="action-button btn-secondary" onclick="resetBiathlon()">
+                        🔄 NOUVELLE ÉPREUVE
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Écran QR Code -->
+    <div class="screen" id="screen-qr">
+        <div class="card">
+            <div class="header-bar">
+                <h1>📱 QR CODE</h1>
+                <p>Accès aux résultats</p>
+            </div>
+            
+            <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px 0;">
+                <h2 style="color: #333; margin-bottom: 10px; text-align: center;">Scannez pour voir les résultats</h2>
+                <p style="color: #666; margin-bottom: 30px; text-align: center;">Consultez le classement complet</p>
+                
+                <div id="qrCodeContainer" style="background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); margin-bottom: 20px;"></div>
+                
+                <div class="info-box" style="width: 100%; max-width: 400px;">
+                    <p style="text-align: center;"><strong>🔒 Les élèves peuvent consulter les résultats<br>mais pas les modifier</strong></p>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button class="action-button btn-secondary" onclick="goToResults()">
+                    ← RETOUR AUX RÉSULTATS
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="index.html_fichiers/qrcode.min.js"></script>
+    <script>
+        // État global
+        const state = {
+            student: { name: '', class: '', date: '', number: '', judge: '' },
+            phases: {
+                course1: { time: 0, startTime: null },
+                shooting1: { time: 0, startTime: null, targets: [], direction: null },
+                course2: { time: 0, startTime: null },
+                shooting2: { time: 0, startTime: null, targets: [], direction: null },
+                course3: { time: 0, startTime: null },
+                shooting3: { time: 0, startTime: null, targets: [], direction: null }
+            },
+            currentInterval: null,
+            config: {
+                sheetsUrl: '',
+                sheetsApiUrl: ''
+            }
+        };
+
+        // Formater le temps en mm:ss
+        function formatTime(ms) {
+            const totalSeconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Navigation entre écrans
+        function showScreen(screenId) {
+            console.log('Navigation vers:', screenId);
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(screenId);
+            if (target) {
+                target.classList.add('active');
+                window.scrollTo(0, 0);
+            }
+        }
+
+        function goToConfig() {
+            showScreen('screen-config');
+        }
+
+        function goToInfo() {
+            showScreen('screen-info');
+        }
+
+        function goToResults() {
+            showScreen('screen-results');
+        }
+
+        // Charger la configuration
+        function loadConfig() {
+            try {
+                const saved = localStorage.getItem('biathlonConfig');
+                if (saved) {
+                    state.config = JSON.parse(saved);
+                }
+            } catch (e) {
+                console.error('Erreur chargement config:', e);
+            }
+        }
+
+        // Sauvegarder la configuration
+        function saveConfig() {
+            try {
+                const urlInput = document.getElementById('sheetsUrl');
+                const apiInput = document.getElementById('sheetsApiUrl');
+                
+                state.config.sheetsUrl = urlInput ? urlInput.value.trim() : '';
+                state.config.sheetsApiUrl = apiInput ? apiInput.value.trim() : '';
+                
+                localStorage.setItem('biathlonConfig', JSON.stringify(state.config));
+                alert('✅ Configuration enregistrée !');
+                showScreen('screen-info');
+            } catch (e) {
+                console.error('Erreur sauvegarde config:', e);
+                alert('❌ Erreur lors de la sauvegarde');
+            }
+        }
+
+        // Démarrer le biathlon
+        function startBiathlon() {
+            const judge = document.getElementById('judgeName');
+            const name = document.getElementById('studentName');
+            const cls = document.getElementById('studentClass');
+            const date = document.getElementById('studentDate');
+            const number = document.getElementById('studentNumber');
+
+            state.student.judge = judge ? judge.value.trim() : '';
+            state.student.name = name ? name.value.trim() : '';
+            state.student.class = cls ? cls.value.trim() : '';
+            state.student.date = date ? date.value : '';
+            state.student.number = number ? number.value.trim() : '';
+
+            if (!state.student.judge) {
+                alert('⚠️ Veuillez entrer le nom du juge');
+                return;
+            }
+
+            if (!state.student.name) {
+                alert('⚠️ Veuillez entrer le nom de l\'élève');
+                return;
+            }
+
+            showScreen('screen-course1');
+        }
+
+        // Course 1
+        function startCourse1() {
+            state.phases.course1.startTime = Date.now();
+            document.getElementById('btn-start-course1').style.display = 'none';
+            document.getElementById('btn-stop-course1').style.display = 'block';
+            document.getElementById('status-course1').textContent = 'En cours...';
+            
+            state.currentInterval = setInterval(() => {
+                const elapsed = Date.now() - state.phases.course1.startTime;
+                document.getElementById('timer-course1').textContent = formatTime(elapsed);
+            }, 100);
+        }
+
+        function stopCourse1() {
+            clearInterval(state.currentInterval);
+            state.phases.course1.time = Date.now() - state.phases.course1.startTime;
+            state.phases.shooting1.startTime = Date.now();
+            
+            showScreen('screen-shooting1');
+            
+            state.currentInterval = setInterval(() => {
+                const elapsed = Date.now() - state.phases.shooting1.startTime;
+                document.getElementById('timer-shooting1').textContent = formatTime(elapsed);
+            }, 100);
+        }
+
+        // Tir - Gestion des cibles
+        function toggleTarget(shootingNum, targetNum) {
+            const phaseKey = `shooting${shootingNum}`;
+            const phase = state.phases[phaseKey];
+            const btn = document.querySelector(`#targets-${phaseKey} button[data-position="${targetNum}"]`);
+            
+            if (!btn) return;
+
+            // Déterminer le sens au premier clic
+            if (phase.targets.length === 0) {
+                phase.direction = targetNum <= 2 ? 'G→D' : 'D→G';
+                document.getElementById(`direction-${phaseKey}`).textContent = phase.direction;
+            }
+            
+            const idx = phase.targets.findIndex(t => t.position === targetNum);
+            
+            if (idx === -1) {
+                // Première fois : marquer comme touché
+                phase.targets.push({ position: targetNum, hit: true });
+                btn.classList.add('hit');
+                btn.textContent = '✓';
+            } else {
+                if (phase.targets[idx].hit) {
+                    // Touché → Raté
+                    phase.targets[idx].hit = false;
+                    btn.classList.remove('hit');
+                    btn.classList.add('miss');
+                    btn.textContent = '✗';
+                } else {
+                    // Raté → Vide
+                    phase.targets.splice(idx, 1);
+                    btn.classList.remove('miss');
+                    btn.textContent = targetNum;
+                }
+            }
+            
+            const hits = phase.targets.filter(t => t.hit).length;
+            document.getElementById(`hits-${phaseKey}`).textContent = `${hits}/5`;
+        }
+
+        // Tir 1
+        function stopShooting1() {
+            clearInterval(state.currentInterval);
+            state.phases.shooting1.time = Date.now() - state.phases.shooting1.startTime;
+            state.phases.course2.startTime = Date.now();
+            
+            showScreen('screen-course2');
+            
+            state.currentInterval = setInterval(() => {
+                const elapsed = Date.now() - state.phases.course2.startTime;
+                document.getElementById('timer-course2').textContent = formatTime(elapsed);
+            }, 100);
+        }
+
+        // Course 2
+        function stopCourse2() {
+            clearInterval(state.currentInterval);
+            state.phases.course2.time = Date.now() - state.phases.course2.startTime;
+            state.phases.shooting2.startTime = Date.now();
+            
+            showScreen('screen-shooting2');
+            
+            state.currentInterval = setInterval(() => {
+                const elapsed = Date.now() - state.phases.shooting2.startTime;
+                document.getElementById('timer-shooting2').textContent = formatTime(elapsed);
+            }, 100);
+        }
+
+        // Tir 2
+        function stopShooting2() {
+            clearInterval(state.currentInterval);
+            state.phases.shooting2.time = Date.now() - state.phases.shooting2.startTime;
+            state.phases.course3.startTime = Date.now();
+            
+            showScreen('screen-course3');
+            
+            state.currentInterval = setInterval(() => {
+                const elapsed = Date.now() - state.phases.course3.startTime;
+                document.getElementById('timer-course3').textContent = formatTime(elapsed);
+            }, 100);
+        }
+
+        // Course 3
+        function stopCourse3() {
+            clearInterval(state.currentInterval);
+            state.phases.course3.time = Date.now() - state.phases.course3.startTime;
+            state.phases.shooting3.startTime = Date.now();
+            
+            showScreen('screen-shooting3');
+            
+            state.currentInterval = setInterval(() => {
+                const elapsed = Date.now() - state.phases.shooting3.startTime;
+                document.getElementById('timer-shooting3').textContent = formatTime(elapsed);
+            }, 100);
+        }
+
+        // Tir 3
+        function stopShooting3() {
+            clearInterval(state.currentInterval);
+            state.phases.shooting3.time = Date.now() - state.phases.shooting3.startTime;
+            
+            calculateResults();
+            showScreen('screen-results');
+        }
+
+        // Calculer les résultats
+        function calculateResults() {
+            const totalCourse = state.phases.course1.time + state.phases.course2.time + state.phases.course3.time;
+            const totalShooting = state.phases.shooting1.time + state.phases.shooting2.time + state.phases.shooting3.time;
+            const totalTime = totalCourse + totalShooting;
+            
+            const hits1 = state.phases.shooting1.targets.filter(t => t.hit).length;
+            const hits2 = state.phases.shooting2.targets.filter(t => t.hit).length;
+            const hits3 = state.phases.shooting3.targets.filter(t => t.hit).length;
+            const totalHits = hits1 + hits2 + hits3;
+            
+            document.getElementById('result-total').textContent = formatTime(totalTime);
+            document.getElementById('result-hits').textContent = `${totalHits}/15`;
+            document.getElementById('result-course').textContent = formatTime(totalCourse);
+            document.getElementById('result-shooting').textContent = formatTime(totalShooting);
+            
+            // Détail courses
+            document.getElementById('detail-courses').innerHTML = `
+                <div class="detail-row">
+                    <span>Course 1</span>
+                    <span>${formatTime(state.phases.course1.time)}</span>
+                </div>
+                <div class="detail-row">
+                    <span>Course 2</span>
+                    <span>${formatTime(state.phases.course2.time)}</span>
+                </div>
+                <div class="detail-row">
+                    <span>Course 3</span>
+                    <span>${formatTime(state.phases.course3.time)}</span>
+                </div>
+                <div class="detail-row total">
+                    <span>TOTAL</span>
+                    <span>${formatTime(totalCourse)}</span>
+                </div>
+            `;
+            
+            // Détail tirs
+            document.getElementById('detail-shootings').innerHTML = `
+                <div class="detail-row">
+                    <span>Tir 1</span>
+                    <span>${formatTime(state.phases.shooting1.time)}</span>
+                    <span>${hits1}/5</span>
+                    <span>${state.phases.shooting1.direction || '-'}</span>
+                </div>
+                <div class="detail-row">
+                    <span>Tir 2</span>
+                    <span>${formatTime(state.phases.shooting2.time)}</span>
+                    <span>${hits2}/5</span>
+                    <span>${state.phases.shooting2.direction || '-'}</span>
+                </div>
+                <div class="detail-row">
+                    <span>Tir 3</span>
+                    <span>${formatTime(state.phases.shooting3.time)}</span>
+                    <span>${hits3}/5</span>
+                    <span>${state.phases.shooting3.direction || '-'}</span>
+                </div>
+                <div class="detail-row total">
+                    <span>TOTAL</span>
+                    <span>${formatTime(totalShooting)}</span>
+                    <span>${totalHits}/15</span>
+                    <span>${Math.round((totalHits/15)*100)}%</span>
+                </div>
+            `;
+        }
+
+        // Envoyer vers Google Sheets
+        async function sendToGoogleSheets() {
+            if (!state.config.sheetsApiUrl) {
+                if (confirm('⚠️ API Google Sheets non configurée. Configurer maintenant ?')) {
+                    showScreen('screen-config');
+                }
+                return;
+            }
+
+            const totalCourse = state.phases.course1.time + state.phases.course2.time + state.phases.course3.time;
+            const totalShooting = state.phases.shooting1.time + state.phases.shooting2.time + state.phases.shooting3.time;
+            const totalTime = totalCourse + totalShooting;
+            
+            const hits1 = state.phases.shooting1.targets.filter(t => t.hit).length;
+            const hits2 = state.phases.shooting2.targets.filter(t => t.hit).length;
+            const hits3 = state.phases.shooting3.targets.filter(t => t.hit).length;
+            const totalHits = hits1 + hits2 + hits3;
+
+            const data = {
+                timestamp: new Date().toISOString(),
+                juge: state.student.judge,
+                nom: state.student.name,
+                classe: state.student.class,
+                date: state.student.date,
+                dossard: state.student.number,
+                tempsCourse1: formatTime(state.phases.course1.time),
+                tempsCourse2: formatTime(state.phases.course2.time),
+                tempsCourse3: formatTime(state.phases.course3.time),
+                tempsTotalCourse: formatTime(totalCourse),
+                tempsTir1: formatTime(state.phases.shooting1.time),
+                tempsTir2: formatTime(state.phases.shooting2.time),
+                tempsTir3: formatTime(state.phases.shooting3.time),
+                tempsTotalTir: formatTime(totalShooting),
+                reussiteTir1: `${hits1}/5`,
+                reussiteTir2: `${hits2}/5`,
+                reussiteTir3: `${hits3}/5`,
+                reussiteTotale: `${totalHits}/15`,
+                pourcentageReussite: `${Math.round((totalHits/15)*100)}%`,
+                sensTir1: state.phases.shooting1.direction || '-',
+                sensTir2: state.phases.shooting2.direction || '-',
+                sensTir3: state.phases.shooting3.direction || '-',
+                tempsTotal: formatTime(totalTime)
+            };
+
+            try {
+                const response = await fetch(state.config.sheetsApiUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                alert('✅ Données envoyées avec succès !');
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('❌ Erreur lors de l\'envoi. Vérifiez votre configuration.');
+            }
+        }
+
+        // Sauvegarder localement
+        function saveResults() {
+            const totalCourse = state.phases.course1.time + state.phases.course2.time + state.phases.course3.time;
+            const totalShooting = state.phases.shooting1.time + state.phases.shooting2.time + state.phases.shooting3.time;
+            const totalTime = totalCourse + totalShooting;
+            
+            const hits1 = state.phases.shooting1.targets.filter(t => t.hit).length;
+            const hits2 = state.phases.shooting2.targets.filter(t => t.hit).length;
+            const hits3 = state.phases.shooting3.targets.filter(t => t.hit).length;
+            const totalHits = hits1 + hits2 + hits3;
+            
+            const fileName = `Biathlon_${state.student.name.replace(/\s+/g, '_')}_${state.student.date}.html`;
+            
+            const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Résultats Biathlon - ${state.student.name}</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
+        .header { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 30px; border-radius: 15px; text-align: center; margin-bottom: 30px; }
+        .info { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 20px 0; }
+        .stat-card { background: white; padding: 20px; border-radius: 10px; text-align: center; border-top: 4px solid #667eea; }
+        .stat-card h3 { font-size: 0.9em; color: #666; margin-bottom: 10px; }
+        .stat-card .value { font-size: 2em; font-weight: bold; color: #333; }
+        .detail { background: white; padding: 20px; border-radius: 10px; margin: 20px 0; }
+        .detail h3 { color: #667eea; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .row.total { font-weight: bold; background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 BIATHLON LYCÉE</h1>
+        <p>Résultats Individuels</p>
+    </div>
+    
+    <div class="info">
+        <h2>📋 Informations</h2>
+        <p><strong>Juge :</strong> ${state.student.judge}</p>
+        <p><strong>Élève :</strong> ${state.student.name}</p>
+        <p><strong>Classe :</strong> ${state.student.class}</p>
+        <p><strong>Date :</strong> ${state.student.date}</p>
+        <p><strong>Dossard :</strong> ${state.student.number}</p>
+    </div>
+    
+    <div class="stats">
+        <div class="stat-card">
+            <h3>Temps Total</h3>
+            <div class="value">${formatTime(totalTime)}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Cibles</h3>
+            <div class="value">${totalHits}/15</div>
+        </div>
+        <div class="stat-card">
+            <h3>Temps Course</h3>
+            <div class="value">${formatTime(totalCourse)}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Temps Tir</h3>
+            <div class="value">${formatTime(totalShooting)}</div>
+        </div>
+    </div>
+    
+    <div class="detail">
+        <h3>🏃‍♂️ Détail Courses</h3>
+        <div class="row"><span>Course 1</span><span>${formatTime(state.phases.course1.time)}</span></div>
+        <div class="row"><span>Course 2</span><span>${formatTime(state.phases.course2.time)}</span></div>
+        <div class="row"><span>Course 3</span><span>${formatTime(state.phases.course3.time)}</span></div>
+        <div class="row total"><span>TOTAL</span><span>${formatTime(totalCourse)}</span></div>
+    </div>
+    
+    <div class="detail">
+        <h3>🎯 Détail Tirs</h3>
+        <div class="row"><span>Tir 1</span><span>${formatTime(state.phases.shooting1.time)}</span><span>${hits1}/5</span><span>${state.phases.shooting1.direction || '-'}</span></div>
+        <div class="row"><span>Tir 2</span><span>${formatTime(state.phases.shooting2.time)}</span><span>${hits2}/5</span><span>${state.phases.shooting2.direction || '-'}</span></div>
+        <div class="row"><span>Tir 3</span><span>${formatTime(state.phases.shooting3.time)}</span><span>${hits3}/5</span><span>${state.phases.shooting3.direction || '-'}</span></div>
+        <div class="row total"><span>TOTAL</span><span>${formatTime(totalShooting)}</span><span>${totalHits}/15</span><span>${Math.round((totalHits/15)*100)}%</span></div>
+    </div>
+</body>
+</html>`;
+
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            alert(`✅ Fichier sauvegardé : ${fileName}`);
+        }
+
+        // Afficher QR Code
+        function showQRCode() {
+            if (!state.config.sheetsUrl) {
+                if (confirm('⚠️ URL Google Sheets non configurée. Configurer maintenant ?')) {
+                    showScreen('screen-config');
+                }
+                return;
+            }
+
+            const container = document.getElementById('qrCodeContainer');
+            container.innerHTML = '';
+            
+            try {
+                const qr = qrcode(0, 'H');
+                qr.addData(state.config.sheetsUrl);
+                qr.make();
+                container.innerHTML = qr.createImgTag(5);
+            } catch (e) {
+                console.error('Erreur QR Code:', e);
+                alert('❌ Erreur lors de la génération du QR Code');
+                return;
+            }
+
+            showScreen('screen-qr');
+        }
+
+        // Réinitialiser
+        function resetBiathlon() {
+            if (confirm('🔄 Voulez-vous vraiment recommencer une nouvelle épreuve ?')) {
+                location.reload();
+            }
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Date du jour
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const formattedDate = `${yyyy}-${mm}-${dd}`;
+            
+            const dateInput = document.getElementById('studentDate');
+            if (dateInput) {
+                dateInput.value = formattedDate;
+            }
+            
+            // Charger config
+            loadConfig();
+            
+            // Remplir les champs config si déjà sauvegardés
+            const urlInput = document.getElementById('sheetsUrl');
+            const apiInput = document.getElementById('sheetsApiUrl');
+            if (urlInput) urlInput.value = state.config.sheetsUrl || '';
+            if (apiInput) apiInput.value = state.config.sheetsApiUrl || '';
+            
+            console.log('✅ Application initialisée');
+        });
+    </script>
+
+</body></html>
